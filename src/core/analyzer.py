@@ -21,14 +21,11 @@ class URLAnalyzer:
             }
 
         # 2. Unshortening
-        try:
-            chain = self.trace_redirects(qr_data)
-            final_url = chain[-1] if chain else qr_data
-        except Exception as e:
-            return {"status": "error", "message": f"Network Error: {str(e)}"}
+        chain, connection_failed = self.trace_redirects(qr_data)
+        final_url = chain[-1] if chain else qr_data
 
         # 3. Heuristic Analysis (The Verdict)
-        verdict, score, flags = self.calculate_threat_score(final_url, chain)
+        verdict, score, flags = self.calculate_threat_score(final_url, chain, connection_failed)
 
         safe_final_url = defang(final_url)
         
@@ -45,6 +42,11 @@ class URLAnalyzer:
         }
 
     def trace_redirects(self, url):
+        """Returns (history, connection_failed). connection_failed is True if
+        the destination could not be reached at all (timeout, DNS failure,
+        connection refused, etc.) - this is distinct from a clean HTTP
+        response and must not be treated as equivalent to a verified-safe
+        destination."""
         session = requests.Session()
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
         history = [url]
@@ -61,10 +63,11 @@ class URLAnalyzer:
                     history.append(next_url)
                     current_url = next_url
                 else: break
-            except: break
-        return history
+            except requests.exceptions.RequestException:
+                return history, True
+        return history, False
 
-    def calculate_threat_score(self, url, chain):
+    def calculate_threat_score(self, url, chain, connection_failed=False):
         """
         0-2: Safe
         3-5: Suspicious
@@ -73,7 +76,14 @@ class URLAnalyzer:
         score = 0
         flags = []
         parsed = urlparse(url)
-        
+
+        # Check 0: Could not verify the destination at all. This must never
+        # be scored as equivalent to a confirmed-clean response - phishing
+        # infrastructure is often short-lived or blocks automated scanners.
+        if connection_failed:
+            score += 3
+            flags.append("Could not verify destination (connection failed, timed out, or refused)")
+
         # Check 1: Redirection Depth
         if len(chain) > 2:
             score += 2
@@ -97,9 +107,12 @@ class URLAnalyzer:
             flags.append("Direct File Download Detected")
 
         # Verdict Logic
+        if not flags:
+            flags.append("Clean URL Structure")
+
         if score >= 5:
             return "HIGH RISK", score, flags
         elif score >= 2:
             return "SUSPICIOUS", score, flags
         else:
-            return "SAFE", score, ["Clean URL Structure"]
+            return "SAFE", score, flags

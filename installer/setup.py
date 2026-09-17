@@ -177,7 +177,14 @@ class SetupWizard(QWidget):
 
     def run_installation(self):
         self.btn_next.setEnabled(False); self.btn_cancel.setEnabled(False)
-        self.worker = InstallWorker(self.path_edit.text())
+        target = self.path_edit.text()
+        # Always install into an APP_NAME-named subfolder, even if the user
+        # browsed to an unrelated existing folder (e.g. their Desktop). The
+        # uninstaller deletes this folder by name later, so it must never be
+        # allowed to be a folder the user did not intend to have wiped.
+        if os.path.basename(os.path.normpath(target)).lower() != APP_NAME.lower():
+            target = os.path.join(target, APP_NAME)
+        self.worker = InstallWorker(target)
         self.worker.progress.connect(self.progress.setValue)
         self.worker.status.connect(self.status_label.setText)
         self.worker.finished.connect(self.done)
