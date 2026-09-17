@@ -61,21 +61,6 @@ class OverlayConsole(QTextEdit):
         """)
         
     def resizeEvent(self, event):
-        super().resizeEvent(event)
-        
-        # Pushed to bottom-right corner with minimal margin
-        margin_right = 15   # Space from right scrollbar
-        margin_bottom = 10  # Space from bottom edge
-        
-        btn_w = self.btn_save.sizeHint().width()
-        btn_h = self.btn_save.sizeHint().height()
-        
-        self.btn_save.move(
-            self.viewport().width() - btn_w - margin_right,
-            self.viewport().height() - btn_h - margin_bottom
-        )        
-    
-    def resizeEvent(self, event):
         # Keep button pinned to Bottom-Right
         super().resizeEvent(event)
         padding = 20

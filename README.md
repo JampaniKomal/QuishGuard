@@ -38,7 +38,7 @@ If you wish to modify the source code or build the application yourself, follow 
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/JAMPANIKOMAL/QuishGuard.git](https://github.com/JAMPANIKOMAL/QuishGuard.git)
+    git clone https://github.com/JampaniKomal/QuishGuard.git
     ```
 
 2.  **Create and activate a virtual environment:**
@@ -79,6 +79,10 @@ After the build completes, the distribution files will be available in the `dist
   - **Gemini (Google):** For providing extensive assistance in the architectural design, debugging, and development of the application logic and user interface.
   - **QtAwesome:** For the FontAwesome icon implementation.
   - **PyMuPDF & OpenCV:** For the core document and image processing capabilities.
+
+## License
+
+This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
 
 ## Disclaimer
 
